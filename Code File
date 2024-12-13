@@ -1,0 +1,82 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Load Dataset
+def load_data(file_path):
+    """
+    Load the dataset from a CSV file.
+    """
+    data = pd.read_csv(file_path)
+    return data
+
+# Data Preprocessing
+def preprocess_data(data):
+    """
+    Preprocess the dataset by encoding categorical variables and handling missing values.
+    """
+    data = data.dropna()  # Drop missing values (or handle them differently if required)
+    categorical_columns = ['vertical', 'geography', 'advertising_channel']
+    data = pd.get_dummies(data, columns=categorical_columns, drop_first=True)
+    return data
+
+# Feature Selection
+def select_features(data):
+    """
+    Separate features and target variables.
+    """
+    X = data.drop(columns=['growth_time', 'organic_traffic'])  # Replace with your target columns
+    y_growth = data['growth_time']
+    y_traffic = data['organic_traffic']
+    return X, y_growth, y_traffic
+
+# Train Model
+def train_model(X_train, y_train):
+    """
+    Train a Random Forest Regressor model.
+    """
+    model = RandomForestRegressor(random_state=42, n_estimators=100)
+    model.fit(X_train, y_train)
+    return model
+
+# Evaluate Model
+def evaluate_model(model, X_test, y_test):
+    """
+    Evaluate the model using Mean Squared Error and R2 Score.
+    """
+    predictions = model.predict(X_test)
+    mse = mean_squared_error(y_test, predictions)
+    r2 = r2_score(y_test, predictions)
+    return mse, r2
+
+# Main Function
+def main():
+    file_path = 'application_data.csv'  # Replace with your dataset path
+    data = load_data(file_path)
+
+    # Preprocessing
+    data = preprocess_data(data)
+    X, y_growth, y_traffic = select_features(data)
+
+    # Split the data
+    X_train, X_test, y_growth_train, y_growth_test = train_test_split(X, y_growth, test_size=0.2, random_state=42)
+    X_train, X_test, y_traffic_train, y_traffic_test = train_test_split(X, y_traffic, test_size=0.2, random_state=42)
+
+    # Train models
+    growth_model = train_model(X_train, y_growth_train)
+    traffic_model = train_model(X_train, y_traffic_train)
+
+    # Evaluate models
+    growth_mse, growth_r2 = evaluate_model(growth_model, X_test, y_growth_test)
+    traffic_mse, traffic_r2 = evaluate_model(traffic_model, X_test, y_traffic_test)
+
+    # Results
+    print("Growth Time Prediction:")
+    print(f"MSE: {growth_mse:.2f}, R2: {growth_r2:.2f}")
+    print("Organic Traffic Prediction:")
+    print(f"MSE: {traffic_mse:.2f}, R2: {traffic_r2:.2f}")
+
+if __name__ == "__main__":
+    main()
